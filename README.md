@@ -4,15 +4,15 @@ SmoothTrend is a comprehensive time series analysis tool that utilizes Holt and 
 
 ## Features
 
-- **Trend Detection**: Detects trends using Mann-Kendall and Cox-Stuart tests.
-- **Stationarity Testing**: Tests for stationarity with the Augmented Dickey-Fuller (ADF) test.
-- **Exponential Smoothing**: Fits Holt and Simple Exponential Smoothing models to the data and forecasts future values.
-- **Residual Analysis**: Performs detailed residual analysis including Ljung-Box, Shapiro-Wilk, and Kolmogorov-Smirnov tests.
+- **Trend Detection**: Utilizes Mann-Kendall and Cox-Stuart tests for trend identification.
+- **Stationarity Testing**: Implements the Augmented Dickey-Fuller (ADF) test for stationarity analysis.
+- **Exponential Smoothing**: Fits Holt-Winters, Holt, and Simple Exponential Smoothing models to the data and generates forecasts.
+- **Residual Analysis**: Conducts thorough residual analysis using Ljung-Box, Shapiro-Wilk, and Kolmogorov-Smirnov tests.
 - **Heteroscedasticity Tests**: Includes Breusch-Pagan, White, and Spearman's rank correlation tests.
-- **Descriptive Statistics**: Computes mean, median, standard deviation, skewness, kurtosis, and other descriptive statistics.
-- **Data Visualization**: Plots decomposition plots, residual plots, and Autocorrelation Function (ACF) plots.
+- **Descriptive Statistics**: Calculates comprehensive statistical measures including mean, median, standard deviation, skewness, and kurtosis.
+- **Data Visualization**: Generates insightful plots including decomposition, residual, and Autocorrelation Function (ACF) plots.
 - **Forecasting**: Provides forecasts with prediction intervals and error statistics (MSE, MAE, RMSE, MAPE).
-- **Spectral Analysis**: Performs spectral analysis on the data.
+- **Spectral Analysis**: Performs spectral analysis on the time series data.
 
 ## Installation
 
