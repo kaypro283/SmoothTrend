@@ -49,4 +49,4 @@ SmoothTrend is a comprehensive time series analysis tool that utilizes Holt-Wint
 Run the `time_series_analysis_14.py` script to start the program:
 
 ```bash
-python time_series_analysis.py
+python time_series_analysis_14.py
