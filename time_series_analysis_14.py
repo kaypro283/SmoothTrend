@@ -807,8 +807,7 @@ class ARMA:
     def check_residual_normality(self):
         try:
             _, shapiro_p_value = stats.shapiro(self.residuals)
-            _, ks_p_value = stats.kstest(self.residuals, 'norm',
-                                         args=(np.mean(self.residuals), np.std(self.residuals)))
+            _, ks_p_value = stats.kstest(self.residuals, 'norm', args=(np.mean(self.residuals), np.std(self.residuals)))
             return shapiro_p_value, ks_p_value
         except Exception as e:
             winsound.Beep(1000, 500)
@@ -817,49 +816,49 @@ class ARMA:
 
     def check_heteroscedasticity(self):
         if len(self.residuals) != len(self.fitted_values):
-            winsound.Beep(1000, 500)
             print(WARNING_FG + f"Error: Mismatch in the number of residuals ({len(self.residuals)}) "
-                               f"and fitted values ({len(self.fitted_values)}).")
+                               f"and fitted values ({len(self.fitted_values)})." + Style.RESET_ALL)
             return
 
         try:
             bp_test = breusch_pagan_test(self.residuals, self.fitted_values)
+            white_test = white_test_heteroscedasticity(self.residuals, self.fitted_values)
+            spearman_p_value = heteroscedasticity_test(self.residuals, self.fitted_values)
+
             print(f"\n4. **Breusch-Pagan Test**")
             print(f"   - **Purpose:** Tests for heteroscedasticity (changing variance) in residuals.")
             print(f"   - **p-value:** {bp_test:.4f}")
             if bp_test < 0.05:
-                print(WARNING_FG + "   - **Interpretation:** Warning: Residuals may be heteroscedastic "
-                                   "(Breusch-Pagan test).")
+                print(WARNING_FG + "   - **Interpretation:** Reject the null hypothesis. "
+                                   "There is evidence to suggest the residuals are heteroscedastic." + Style.RESET_ALL)
             else:
-                print("   - **Interpretation:** No significant heteroscedasticity detected in residuals "
-                      "(Breusch-Pagan test).")
+                print("   - **Interpretation:** Fail to reject the null hypothesis. There is not enough evidence "
+                      "to conclude the residuals are heteroscedastic.")
 
-            white_test = white_test_heteroscedasticity(self.residuals, self.fitted_values)
             print(f"\n5. **White's Test**")
             print(f"   - **Purpose:** Another test for heteroscedasticity in residuals.")
             print(f"   - **p-value:** {white_test:.4f}")
             if white_test < 0.05:
-                print(
-                    WARNING_FG + "   - **Interpretation:** Warning: Residuals may be "
-                                 "heteroscedastic (White's test).")
+                print(WARNING_FG + "   - **Interpretation:** Reject the null hypothesis. "
+                                   "There is evidence to suggest the residuals are heteroscedastic." + Style.RESET_ALL)
             else:
-                print("   - **Interpretation:** No significant heteroscedasticity detected in residuals "
-                      "(White's test).")
+                print("   - **Interpretation:** Fail to reject the null hypothesis. There is not enough evidence "
+                      "to conclude the residuals are heteroscedastic.")
 
-            spearman_p_value = heteroscedasticity_test(self.residuals, self.fitted_values)
             print(f"\n6. **Spearman's Rank Correlation Test**")
             print(f"   - **Purpose:** Tests for heteroscedasticity using rank correlation.")
             print(f"   - **p-value:** {spearman_p_value:.4f}")
             if spearman_p_value < 0.05:
-                print(WARNING_FG + "   - **Interpretation:** Warning: Residuals may be heteroscedastic "
-                                   "(Spearman's rank correlation).")
+                print(WARNING_FG + "   - **Interpretation:** Reject the null hypothesis. "
+                                   "There is evidence to suggest the residuals are heteroscedastic." + Style.RESET_ALL)
             else:
-                print("   - **Interpretation:** No significant heteroscedasticity detected in residuals "
-                      "(Spearman's rank correlation).")
+                print("   - **Interpretation:** Fail to reject the null hypothesis. There is not enough evidence "
+                      "to conclude the residuals are heteroscedastic.")
 
         except Exception as e:
             winsound.Beep(1000, 500)
             print(WARNING_FG + f"Error during heteroscedasticity test: {e}")
+            return None, None, None
 
     def plot_residuals(self):
         plot_residuals(self.residuals)
@@ -1246,12 +1245,25 @@ def perform_full_analysis(data, debug=False):
             print(f"\n2. **Shapiro-Wilk Test**")
             print(f"   - **Purpose:** Tests for normality in the distribution of residuals.")
             print(f"   - **p-value:** {shapiro_p_value:.4f}")
-            print(f"   - **Interpretation:** Residuals follow a normal distribution.")
+            if shapiro_p_value > 0.05:
+                print("   - **Interpretation:** Fail to reject the null hypothesis. There is not enough evidence "
+                      "to conclude the residuals are not normally distributed.")
+            else:
+                print(WARNING_FG + "   - **Interpretation:** Reject the null hypothesis. "
+                                   "There is evidence to suggest the residuals are not normally "
+                                   "distributed." + Style.RESET_ALL)
+
         if ks_p_value is not None:
             print(f"\n3. **Kolmogorov-Smirnov Test**")
             print(f"   - **Purpose:** Another test for normality in the distribution of residuals.")
             print(f"   - **p-value:** {ks_p_value:.4f}")
-            print(f"   - **Interpretation:** Residuals follow a normal distribution.")
+            if ks_p_value > 0.05:
+                print("   - **Interpretation:** Fail to reject the null hypothesis. There is not enough evidence "
+                      "to conclude the residuals are not normally distributed.")
+            else:
+                print(WARNING_FG + "   - **Interpretation:** Reject the null hypothesis. "
+                                   "There is evidence to suggest the residuals are not normally "
+                                   "distributed." + Style.RESET_ALL)
 
         model.check_heteroscedasticity()
         model.plot_residuals()
