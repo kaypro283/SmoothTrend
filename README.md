@@ -1,6 +1,9 @@
-# SmoothTrend v1.3
+# SmoothTrend v1.4
 
 SmoothTrend is a comprehensive time series analysis tool that utilizes Holt-Winters, Holt, and Simple Exponential Smoothing methods, as well as ARIMA modeling, to perform advanced trend analysis, stationarity testing, residual analysis, and forecasting.
+
+![Version](https://img.shields.io/badge/version-1.4-blue.svg)
+![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
 
 ## Features
 
@@ -18,6 +21,13 @@ SmoothTrend is a comprehensive time series analysis tool that utilizes Holt-Wint
 - **Spectral Analysis**: Performs spectral analysis on the time series data.
 - **Optimal Parameter Selection**: Automatically selects optimal parameters for each smoothing method.
 - **Debug Mode**: Offers detailed viewing of calculations for debugging purposes.
+- **Lag Plot Analysis**: Checks for randomness in the time series data.
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/SmoothTrend.git
 
 ## Installation
 
@@ -36,7 +46,7 @@ SmoothTrend is a comprehensive time series analysis tool that utilizes Holt-Wint
 
 ## Usage
 
-Run the `time_series_analysis.py` script to start the program:
+Run the `time_series_analysis_14.py` script to start the program:
 
 ```bash
 python time_series_analysis.py
