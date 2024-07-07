@@ -108,13 +108,6 @@ I welcome contributions to SmoothTrend! If you'd like to contribute, please foll
 8. **Submit a Pull Request**: Go to the GitHub page of your fork, and click the 'New Pull Request' button.
 
 
-### Code of Conduct
-
-By participating in this project, you agree to abide by the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
-
-Thank you for your interest in improving SmoothTrend!
-
-
 ## License
 This project is licensed under the GNU General Public License v2.0. See the [LICENSE](LICENSE) file for details.
 
