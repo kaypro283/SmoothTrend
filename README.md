@@ -65,7 +65,7 @@ Follow the on-screen prompts to input your data and choose analysis options.
 
 
 ## Dependencies
-- numpy
+- numpy (use numpy 1.26.4)  
 - pandas
 - statsmodels
 - scipy
@@ -113,6 +113,7 @@ This project is licensed under the GNU General Public License v2.0. See the [LIC
 
 
 ## Known Limitations
+- Use numpy **1.26.4** (program will crash with 2.0.0) 
 - The program may experience performance issues with extremely large datasets.
 - Certain advanced ARIMA configurations may require manual intervention.
 - The accuracy of forecasts depends on the quality and nature of the input data.
