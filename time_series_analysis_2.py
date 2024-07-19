@@ -1,4 +1,4 @@
-# time_series_analysis_2.py
+# time_series_analysis_201.py
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ def random_color_text(text):
 # Function to display the title screen of the program
 def display_title_screen():
     title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA "
-             "and Trend Analysis Program v2.0")
+             "and Trend Analysis Program v2.01")
     author = "Author: C. van der Kaay (2024)"
     options = (
         "1. View full run-down",
@@ -1355,11 +1355,12 @@ def perform_full_analysis(data, debug=False):
 
         print("\nSummary of Key Findings from the ACF Plot:")
         acf_values = sm.tsa.acf(model.residuals, fft=False)
-        significant_lags = np.where(np.abs(acf_values) > 1.96 / np.sqrt(len(model.residuals)))[0]
+        significant_lags = np.where(np.abs(acf_values[1:]) > 1.96 / np.sqrt(len(model.residuals)))[0] + 1
         if len(significant_lags) == 0:
             print("No significant autocorrelations detected at any lags based on the ACF plot.")
         else:
-            print(f"Significant autocorrelations detected at lags: {significant_lags} based on the ACF plot.")
+            print(WARNING_FG + f"Significant autocorrelations detected at lags: {significant_lags} based on the "
+                               f"ACF plot.")
 
         # Perform Ljung-Box test
         lb_result = sm.stats.acorr_ljungbox(model.residuals, lags=[min(10, len(model.residuals) // 2)], return_df=True)
@@ -1369,14 +1370,17 @@ def perform_full_analysis(data, debug=False):
             print(
                 f"Ljung-Box test (p-value: {lb_pvalue:.4f}) suggests no significant autocorrelation in the residuals.")
         else:
-            print(f"Ljung-Box test (p-value: {lb_pvalue:.4f}) suggests significant autocorrelation in the residuals.")
+            print(WARNING_FG + f"Ljung-Box test (p-value: {lb_pvalue:.4f}) suggests significant autocorrelation in "
+                               f"the residuals.")
 
         if len(significant_lags) == 0 and lb_pvalue > 0.05:
             print("Both ACF plot and Ljung-Box test indicate no significant autocorrelation in the residuals.")
         elif len(significant_lags) > 0 and lb_pvalue <= 0.05:
-            print("Both ACF plot and Ljung-Box test indicate significant autocorrelation in the residuals.")
+            print(WARNING_FG + "Both ACF plot and Ljung-Box test indicate significant autocorrelation in the "
+                               "residuals.")
         else:
-            print("ACF plot and Ljung-Box test provide conflicting information about autocorrelation in the residuals.")
+            print(WARNING_FG + "ACF plot and Ljung-Box test provide conflicting information about autocorrelation "
+                               "in the residuals.")
 
         while True:
             rerun_choice = input(PROMPT_FG + "\nWould you like to rerun the analysis (r), start over (s), "
