@@ -1,4 +1,4 @@
-# time_series_analysis.py
+# time_series_analysis_2.py
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,18 +19,23 @@ import os
 import random
 import webbrowser
 import winsound
+import time
 
 # Third-party imports for data handling and numerical operations
+'''
+Use numpy 1.26.4
+'''
 import numpy as np
 import pandas as pd
 
 # Statistical modeling and diagnostics from statsmodels
+import statsmodels.tsa.arima.model as arima_model
 import statsmodels.api as sm
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.stats.diagnostic import acorr_ljungbox, het_breuschpagan, het_white
-from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller
+from multiprocessing import Pool
 
 # Additional statistical tools from scipy
 from scipy import stats
@@ -58,6 +63,10 @@ HIGHLIGHT_FG = Fore.WHITE
 INFO_FG = Fore.CYAN
 WARNING_FG = Fore.RED
 PROMPT_FG = Fore.YELLOW
+DESC_FG = Fore.YELLOW
+OPTION_FG = Fore.GREEN
+BORDER = Fore.BLUE
+RESET = Style.RESET_ALL
 
 # Minimum number of data points required for analysis
 MIN_DATA_POINTS = 10
@@ -77,8 +86,8 @@ def random_color_text(text):
 
 # Function to display the title screen of the program
 def display_title_screen():
-    title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA "
-             "and Trend Analysis Program v1.4")
+    title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA "
+             "and Trend Analysis Program v2.0")
     author = "Author: C. van der Kaay (2024)"
     options = (
         "1. View full run-down",
@@ -92,7 +101,7 @@ def display_title_screen():
 
     print(INFO_FG + "\nProgram Summary:")
     print("This program performs advanced time series analysis using Holt-Winters, Holt Exponential Smoothing, "
-          "Simple Exponential Smoothing, and ARIMA methods. Key features include:")
+          "Simple Exponential Smoothing, and ARIMA/SARIMA methods. Key features include:")
     print("- Data input: Manual entry or import from CSV files")
     print("- Trend detection using Mann-Kendall and Cox-Stuart tests")
     print("- Stationarity testing with Augmented Dickey-Fuller test")
@@ -104,9 +113,11 @@ def display_title_screen():
     print("- Lag plot analysis to check for randomness")
     print("- Forecasting with prediction intervals and error statistics (MSE, MAE, RMSE, MAPE)")
     print("- Optimal parameter selection for each smoothing method")
-    print("- Automatic model selection for ARIMA using auto_arima")
+    print("- Automatic model selection for ARIMA/SARIMA using auto_arima, handling both seasonal and non-seasonal data")
     print("- Seasonal decomposition for trend, seasonal, and residual components")
     print("- Interactive data visualization using Plotly")
+    print("- Parallel processing for improved performance in parameter optimization")
+    print("- Comprehensive model selection guidance based on data characteristics")
     print("- Debug mode for detailed calculation viewing")
     print(INFO_FG + "\n" + "=" * 50)
     print(author)
@@ -161,10 +172,12 @@ def view_full_rundown():
     print("      - Single exponential smoothing for data without clear trend or seasonality")
     print("      - Optimal selection of alpha parameter")
 
-    print("\n6. ARIMA Modeling:")
+    print("\n6. ARIMA/SARIMA Modeling:")
     print("   - Automatic order selection using auto_arima")
-    print("   - Fits ARIMA (Autoregressive Integrated Moving Average) model to the data")
-    print("   - Handles both seasonal and non-seasonal time series")
+    print("   - Fits ARIMA (Autoregressive Integrated Moving Average) or SARIMA (Seasonal ARIMA) model to the data")
+    print("   - Automatically detects and handles both seasonal and non-seasonal time series")
+    print("   - Uses detected seasonality to inform model selection")
+    print("   - Capable of modeling complex patterns including trends, cycles, and seasonality")
 
     print("\n7. Forecasting:")
     print("   - Generation of point forecasts for user-specified number of periods")
@@ -204,8 +217,48 @@ def view_full_rundown():
     input(PROMPT_FG + "\nPress Enter to proceed with the program..." + Style.RESET_ALL)
 
 
+# Prints a formatted menu for selecting a modeling method with descriptions and color-coded text.
+def print_menu():
+    border_line = BORDER + "-" * 78 + RESET
+    print(border_line)
+    print(PROMPT_FG + "\nBased on the trend and seasonality analysis we've performed, you can choose an "
+          + " " * 18 + "\n"
+          + "appropriate modeling method. "
+          + " " * 53)
+    print("While the analysis can guide your choice, the final decision depends on your " + " " * 13)
+    print("understanding of the data and the specific forecasting needs. " + " " * 28)
+    print(border_line)
+    print(PROMPT_FG + "Here are the available modeling methods:" + " " * 36)
+    print(border_line)
+
+    methods = [
+        ("Holt-Winters Exponential Smoothing",
+         "Best for data with clear trend and seasonality",
+         "Handles level, trend, and seasonal components"),
+        ("Holt Exponential Smoothing",
+         "Suitable for data with trend but no seasonality",
+         "Handles level and trend components"),
+        ("Simple Exponential Smoothing",
+         "Ideal for data without clear trend or seasonality",
+         "Focuses on the level component only"),
+        ("ARIMA/SARIMA (Autoregressive Integrated Moving Average)",
+         "Versatile method that can handle various patterns",
+         "Can accommodate trend, seasonality, and complex autocorrelations\nAutomatically detects and applies seasonal "
+         "or non-seasonal modeling as appropriate")
+    ]
+
+    for i, (title, desc1, desc2) in enumerate(methods, 1):
+        print(OPTION_FG + f"{i}. {title}" + " " * (78 - len(title) - 3))
+        print(DESC_FG + f"    - {desc1}" + " " * (78 - len(desc1) - 7))
+        print(DESC_FG + f"    - {desc2}" + " " * (78 - len(desc2) - 7))
+        if i < len(methods):
+            print(border_line)
+
+    print(border_line)
+
+
 # Function that takes residuals as an argument and plots the ACF. Used in
-# classes: HoltWintersExponentialSmoothing, HoltExponentialSmoothing, SimpleExponentialSmoothing, and ARMA.
+# classes: HoltWintersExponentialSmoothing, HoltExponentialSmoothing, SimpleExponentialSmoothing, and ARIMA.
 def plot_residual_acf(residuals):
     max_lags = len(residuals) - 1
     plot_acf(np.array(residuals), lags=np.arange(1, max_lags + 1))
@@ -239,13 +292,13 @@ def perform_residual_analysis(residuals):
 
 
 # Plot the Autocorrelation Function (ACF) of the residuals. Used in
-# classes: HoltWintersExponentialSmoothing, HoltExponentialSmoothing, SimpleExponentialSmoothing, and ARMA.
+# classes: HoltWintersExponentialSmoothing, HoltExponentialSmoothing, SimpleExponentialSmoothing, and ARIMA.
 
 
 def plot_residuals(residuals):
     plt.figure(figsize=(10, 6))
-    time = range(1, len(residuals))
-    plt.plot(time, residuals[1:], marker='o', linestyle='-', color='b')
+    time_periods = range(1, len(residuals))
+    plt.plot(time_periods, residuals[1:], marker='o', linestyle='-', color='b')
     plt.title('Residuals Over Time', fontsize=14)
     plt.xlabel('Time', fontsize=12)
     plt.ylabel('Residual', fontsize=12)
@@ -762,22 +815,32 @@ class SimpleExponentialSmoothing:
         plot_residual_acf(self.residuals)
 
 
-class ARMA:
-    def __init__(self):
+class CustomARIMA:
+    def __init__(self, seasonal_order=(0, 0, 0, 0)):
         self.model = None
         self.results = None
         self.residuals = []
         self.fitted_values = []
         self.order = None
+        self.seasonal_order = seasonal_order
+        self.auto_model = None
 
     def fit(self, data):
-        # Use pmdarima's auto_arima to find the best ARMA order
-        auto_model = auto_arima(data, seasonal=False, trace=True, error_action='ignore', suppress_warnings=True)
+        # Use pmdarima's auto_arima to find the best ARIMA order
+        auto_model = auto_arima(data, seasonal=True, trace=True, error_action='ignore', suppress_warnings=True)
         self.order = auto_model.order
-        self.model = ARIMA(data, order=self.order)
+        self.model = arima_model.ARIMA(data, order=self.order)
         self.results = self.model.fit()
         self.fitted_values = self.results.fittedvalues
         self.residuals = self.results.resid
+
+        print(INFO_FG + f"Auto ARIMA selected a non-seasonal ARIMA{self.order} model.")
+
+        if self.seasonal_order != (0, 0, 0, 0):
+            print(INFO_FG + f"Auto ARIMA selected a seasonal ARIMA{self.order}{self.seasonal_order} model.")
+
+        print(f"AIC of the selected model: {self.results.aic:.2f}")
+
         return self.fitted_values
 
     def forecast(self, periods):
@@ -926,6 +989,7 @@ def white_test_heteroscedasticity(residuals, fitted_values):
 
 
 def find_optimal_alpha_beta(data, alphas, betas, debug=False):
+    start_time = time.time()
     best_mse = float('inf')
     best_alpha = None
     best_beta = None
@@ -941,12 +1005,15 @@ def find_optimal_alpha_beta(data, alphas, betas, debug=False):
                 best_mse = mse
                 best_alpha = alpha
                 best_beta = beta
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-    return best_alpha, best_beta, best_mse
+    return best_alpha, best_beta, best_mse, elapsed_time
 
 
 # Find the optimal alpha value for Simple Exponential Smoothing
 def find_optimal_alpha(data, alphas, debug=False):
+    start_time = time.time()
     best_mse = float('inf')
     best_alpha = None
 
@@ -959,38 +1026,54 @@ def find_optimal_alpha(data, alphas, debug=False):
         if mse < best_mse:
             best_mse = mse
             best_alpha = alpha
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-    return best_alpha, best_mse
+    return best_alpha, best_mse, elapsed_time
 
-# Find the optimal alpha, beta, and gamma values for Holt-Winters Exponential Smoothing
+# Find the optimal alpha, beta, and gamma values for Holt-Winters Exponential Smoothing using parallel processing
+
+
+def evaluate_params(args):
+    data, alpha, beta, gamma, season_length = args
+    model = HoltWintersExponentialSmoothing(alpha, beta, gamma, season_length)
+    try:
+        model.fit(data)
+        mse, _, _, _ = model.calculate_statistics(data)
+        return alpha, beta, gamma, mse
+    except ZeroDivisionError:
+        return alpha, beta, gamma, float('inf')
 
 
 def find_optimal_holt_winters_params(data, alphas, betas, gammas, season_length, debug=False):
-    best_mse = float('inf')
-    best_alpha = None
-    best_beta = None
-    best_gamma = None
+    start_time = time.time()
 
-    for alpha in alphas:
-        for beta in betas:
-            for gamma in gammas:
-                model = HoltWintersExponentialSmoothing(alpha, beta, gamma, season_length)
-                try:
-                    model.fit(data)
-                    mse, _, _, _ = model.calculate_statistics(data)
-                    if debug:
-                        print(f"Alpha: {alpha:.2f}, Beta: {beta:.2f}, Gamma: {gamma:.2f}, MSE: {mse:.2f}")
-                    if mse < best_mse:
-                        best_mse = mse
-                        best_alpha = alpha
-                        best_beta = beta
-                        best_gamma = gamma
-                except ZeroDivisionError:
-                    print(WARNING_FG + "ZeroDivisionError: Not enough data points to calculate MSE. "
-                                       "Please ensure you have sufficient data for analysis.")
-                    return None, None, None, None
+    param_combinations = [(data, alpha, beta, gamma, season_length)
+                          for alpha in alphas
+                          for beta in betas
+                          for gamma in gammas]
 
-    return best_alpha, best_beta, best_gamma, best_mse
+    with Pool() as pool_obj:  # Renamed to avoid shadowing
+        results = pool_obj.map(evaluate_params, param_combinations)
+
+    valid_results = [r for r in results if r[3] != float('inf')]
+
+    if not valid_results:
+        print(WARNING_FG + "No valid parameter combinations found. "
+                           "Please ensure you have sufficient data for analysis.")
+        return None, None, None, None, None
+
+    best_params = min(valid_results, key=lambda x: x[3])
+    best_alpha, best_beta, best_gamma, best_mse = best_params
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    if debug:
+        print(f"Number of parameter combinations tested: {len(param_combinations)}")
+        print(f"Number of valid combinations: {len(valid_results)}")
+
+    return best_alpha, best_beta, best_gamma, best_mse, elapsed_time
 
 # Script to detect seasonality using FFT
 
@@ -1152,18 +1235,13 @@ def perform_full_analysis(data, debug=False):
 
         # Prompt for model choice after displaying trend analysis data
         while True:
-            print(PROMPT_FG + "\nBased on the trend analysis, choose the smoothing method:")
-            print("1. Holt-Winters Exponential Smoothing")
-            print("2. Holt Exponential Smoothing")
-            print("3. Simple Exponential Smoothing")
-            print("4. Autoregressive–Moving-Average (ARMA)")
-
-            method_choice = input(PROMPT_FG + "Enter your choice (1, 2, 3, or 4): ").strip()
+            print_menu()
+            method_choice = input(PROMPT_FG + "Enter your choice (1, 2, 3, or 4): " + RESET).strip()
 
             if method_choice in ['1', '2', '3', '4']:
                 break
             else:
-                print(WARNING_FG + "Invalid choice. Please enter either '1', '2', '3', or '4'.")
+                print(WARNING_FG + "Invalid choice. Please enter either '1', '2', '3', or '4'." + RESET)
 
         if method_choice == '1':
             # Display the warning message for Holt-Winters method
@@ -1175,8 +1253,9 @@ def perform_full_analysis(data, debug=False):
             betas = np.arange(0.01, .99, 0.01)
             gammas = np.arange(0.01, .99, 0.01)
             season_length = detect_seasonality(data)
-            best_alpha, best_beta, best_gamma, best_mse = find_optimal_holt_winters_params(data, alphas, betas, gammas,
-                                                                                           season_length, debug=debug)
+            (best_alpha, best_beta, best_gamma, best_mse,
+             elapsed_time) = find_optimal_holt_winters_params(data, alphas, betas, gammas, season_length, debug=debug)
+
             if best_alpha is None or best_beta is None or best_gamma is None:
                 print(WARNING_FG + "Returning to model selection menu due to insufficient data for "
                                    "Holt-Winters method.")
@@ -1187,28 +1266,31 @@ def perform_full_analysis(data, debug=False):
             print(f"Beta: {best_beta:.2f}")
             print(f"Gamma: {best_gamma:.2f}")
             print(f"MSE: {best_mse:.2f}")
+            print(f"Time taken to find optimal parameters: {elapsed_time:.2f} seconds")
 
             model = HoltWintersExponentialSmoothing(best_alpha, best_beta, best_gamma, season_length)
         elif method_choice == '2':
             alphas = np.arange(0.01, .99, 0.01)
             betas = np.arange(0.01, .99, 0.01)
-            best_alpha, best_beta, best_mse = find_optimal_alpha_beta(data, alphas, betas, debug=debug)
+            best_alpha, best_beta, best_mse, elapsed_time = find_optimal_alpha_beta(data, alphas, betas, debug=debug)
             print_section_header("Optimal Parameters")
             print(f"Alpha: {best_alpha:.2f}")
             print(f"Beta: {best_beta:.2f}")
             print(f"MSE: {best_mse:.2f}")
+            print(f"Time taken to find optimal parameters: {elapsed_time:.2f} seconds")
 
             model = HoltExponentialSmoothing(best_alpha, best_beta)
         elif method_choice == '3':
             alphas = np.arange(0.01, .99, 0.01)
-            best_alpha, best_mse = find_optimal_alpha(data, alphas, debug=debug)
+            best_alpha, best_mse, elapsed_time = find_optimal_alpha(data, alphas, debug=debug)
             print_section_header("Optimal Parameters")
             print(f"Alpha: {best_alpha:.2f}")
             print(f"MSE: {best_mse:.2f}")
+            print(f"Time taken to find optimal parameters: {elapsed_time:.2f} seconds")
 
             model = SimpleExponentialSmoothing(best_alpha)
         else:  # method_choice == '4'
-            model = ARMA()
+            model = CustomARIMA()
 
         fitted_values = model.fit(data)
 
@@ -1275,10 +1357,26 @@ def perform_full_analysis(data, debug=False):
         acf_values = sm.tsa.acf(model.residuals, fft=False)
         significant_lags = np.where(np.abs(acf_values) > 1.96 / np.sqrt(len(model.residuals)))[0]
         if len(significant_lags) == 0:
-            print("No significant autocorrelations detected at any lags.")
+            print("No significant autocorrelations detected at any lags based on the ACF plot.")
         else:
-            print(f"Significant autocorrelations detected at lags: {significant_lags}")
-        print("Ljung-Box test p-value reinforces that no significant autocorrelation is detected in the residuals.")
+            print(f"Significant autocorrelations detected at lags: {significant_lags} based on the ACF plot.")
+
+        # Perform Ljung-Box test
+        lb_result = sm.stats.acorr_ljungbox(model.residuals, lags=[min(10, len(model.residuals) // 2)], return_df=True)
+        lb_pvalue = lb_result['lb_pvalue'].iloc[0]
+
+        if lb_pvalue > 0.05:
+            print(
+                f"Ljung-Box test (p-value: {lb_pvalue:.4f}) suggests no significant autocorrelation in the residuals.")
+        else:
+            print(f"Ljung-Box test (p-value: {lb_pvalue:.4f}) suggests significant autocorrelation in the residuals.")
+
+        if len(significant_lags) == 0 and lb_pvalue > 0.05:
+            print("Both ACF plot and Ljung-Box test indicate no significant autocorrelation in the residuals.")
+        elif len(significant_lags) > 0 and lb_pvalue <= 0.05:
+            print("Both ACF plot and Ljung-Box test indicate significant autocorrelation in the residuals.")
+        else:
+            print("ACF plot and Ljung-Box test provide conflicting information about autocorrelation in the residuals.")
 
         while True:
             rerun_choice = input(PROMPT_FG + "\nWould you like to rerun the analysis (r), start over (s), "
