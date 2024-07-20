@@ -12,7 +12,7 @@ A key feature of SmoothTrend is its ability to automatically select optimal para
 
 
 ## Author
-C. van der Kaay (2024)
+Christopher D. van der Kaay (2024)
 
 
 ## Features
