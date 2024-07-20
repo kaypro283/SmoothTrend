@@ -1,4 +1,4 @@
-# time_series_analysis_201.py
+# time_series_analysis_202.py
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ def random_color_text(text):
 # Function to display the title screen of the program
 def display_title_screen():
     title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA "
-             "and Trend Analysis Program v2.01")
+             "and Trend Analysis Program v2.02")
     author = "Author: C. van der Kaay (2024)"
     options = (
         "1. View full run-down",
@@ -816,28 +816,38 @@ class SimpleExponentialSmoothing:
 
 
 class CustomARIMA:
-    def __init__(self, seasonal_order=(0, 0, 0, 0)):
+    def __init__(self, seasonal_period=None):
         self.model = None
         self.results = None
         self.residuals = []
         self.fitted_values = []
         self.order = None
-        self.seasonal_order = seasonal_order
+        self.seasonal_order = None
+        self.seasonal_period = seasonal_period
         self.auto_model = None
 
     def fit(self, data):
         # Use pmdarima's auto_arima to find the best ARIMA order
-        auto_model = auto_arima(data, seasonal=True, trace=True, error_action='ignore', suppress_warnings=True)
-        self.order = auto_model.order
-        self.model = arima_model.ARIMA(data, order=self.order)
+        if self.seasonal_period:
+            auto_model = auto_arima(data, seasonal=True, m=self.seasonal_period,
+                                    trace=True, error_action='ignore', suppress_warnings=True)
+            self.order = auto_model.order
+            self.seasonal_order = auto_model.seasonal_order
+            self.model = arima_model.ARIMA(data, order=self.order, seasonal_order=self.seasonal_order)
+        else:
+            auto_model = auto_arima(data, seasonal=False, trace=True,
+                                    error_action='ignore', suppress_warnings=True)
+            self.order = auto_model.order
+            self.model = arima_model.ARIMA(data, order=self.order)
+
         self.results = self.model.fit()
         self.fitted_values = self.results.fittedvalues
         self.residuals = self.results.resid
 
-        print(INFO_FG + f"Auto ARIMA selected a non-seasonal ARIMA{self.order} model.")
-
-        if self.seasonal_order != (0, 0, 0, 0):
+        if self.seasonal_order:
             print(INFO_FG + f"Auto ARIMA selected a seasonal ARIMA{self.order}{self.seasonal_order} model.")
+        else:
+            print(INFO_FG + f"Auto ARIMA selected a non-seasonal ARIMA{self.order} model.")
 
         print(f"AIC of the selected model: {self.results.aic:.2f}")
 
@@ -926,7 +936,6 @@ class CustomARIMA:
     def plot_residuals(self):
         plot_residuals(self.residuals)
 
-    # Plot Autocorrelation Function (ACF) of residuals
     def plot_residual_acf(self):
         plot_residual_acf(self.residuals)
 
@@ -1290,7 +1299,13 @@ def perform_full_analysis(data, debug=False):
 
             model = SimpleExponentialSmoothing(best_alpha)
         else:  # method_choice == '4'
-            model = CustomARIMA()
+            season_length = detect_seasonality(data)
+            if season_length > 1 and len(data) >= 2 * season_length:
+                print(f"Detected seasonality with period: {season_length}")
+                model = CustomARIMA(seasonal_period=season_length)
+            else:
+                print("No significant seasonality detected or insufficient data. Using non-seasonal ARIMA.")
+                model = CustomARIMA()
 
         fitted_values = model.fit(data)
 
