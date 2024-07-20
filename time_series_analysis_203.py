@@ -1,4 +1,4 @@
-# time_series_analysis_202.py
+# time_series_analysis_203.py
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ def random_color_text(text):
 # Function to display the title screen of the program
 def display_title_screen():
     title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA "
-             "and Trend Analysis Program v2.02")
+             "and Trend Analysis Program v2.03")
     author = "Author: C. van der Kaay (2024)"
     options = (
         "1. View full run-down",
@@ -1492,8 +1492,15 @@ def main():
                 elif rerun_choice == 's':
                     break  # Start over
                 elif rerun_choice == 'q':
+                    print("\n" + "="*60)
+                    print(INFO_FG + Style.BRIGHT + "Thank you for using SmoothTrend!")
+                    print(INFO_FG + "Program Created by Christopher D. van der Kaay, Ph.D.")
                     print(random_color_text("Exiting the program. Goodbye!"))
+                    print("="*60 + Style.RESET_ALL)
+                    time.sleep(10)  # Pause for 5 seconds before exiting
                     return
+
+
 
             if rerun_choice == 's':
                 break
