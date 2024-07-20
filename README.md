@@ -1,6 +1,6 @@
-# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.01
+# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.02
 
-![Version](https://img.shields.io/badge/version-2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.02-blue.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
 ![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)
 
@@ -58,6 +58,6 @@ C. van der Kaay (2024)
 
 
 ## Usage
-Run the `time_series_analysis_2.py` script to start the program:
+Run the `time_series_analysis_202.py` script to start the program:
 ```bash
-python time_series_analysis_2.py
+python time_series_analysis_202.py
