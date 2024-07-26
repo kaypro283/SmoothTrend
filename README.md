@@ -58,6 +58,6 @@ Christopher D. van der Kaay (2024)
 
 
 ## Usage
-Run the `time_series_analysis_202.py` script to start the program:
+Run the `time_series_analysis_203.py` script to start the program:
 ```bash
-python time_series_analysis_202.py
+python time_series_analysis_203.py
