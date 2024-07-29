@@ -1,4 +1,4 @@
-# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.03
+# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.04
 
 ![Version](https://img.shields.io/badge/version-2.03-blue.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
@@ -26,7 +26,7 @@ Christopher D. van der Kaay (2024)
 - **Residual Analysis**: Conducts thorough residual analysis using Ljung-Box, Shapiro-Wilk, and Kolmogorov-Smirnov tests.
 - **Heteroscedasticity Tests**: Includes Breusch-Pagan, White, and Spearman's rank correlation tests.
 - **Descriptive Statistics**: Calculates comprehensive statistical measures including mean, median, mode, standard deviation, skewness, and kurtosis.
-- **Data Visualization**: Generates insightful plots including decomposition, residual, ACF plots, and interactive Plotly charts.
+- **Data Visualization**: Generates insightful plots including decomposition, residual, ACF/PACF plots, and interactive Plotly charts.
 - **Forecasting**: Provides forecasts with prediction intervals and error statistics (MSE, MAE, RMSE, MAPE).
 - **Spectral Analysis**: Performs spectral analysis on the time series data.
 - **Optimal Parameter Selection**: Automatically selects optimal parameters for each smoothing method.
@@ -58,6 +58,6 @@ Christopher D. van der Kaay (2024)
 
 
 ## Usage
-Run the `time_series_analysis_203.py` script to start the program:
+Run the `time_series_analysis_204.py` script to start the program:
 ```bash
-python time_series_analysis_203.py
+python time_series_analysis_204.py
