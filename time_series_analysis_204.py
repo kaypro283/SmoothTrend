@@ -1,4 +1,4 @@
-# time_series_analysis_203.py
+# time_series_analysis_204.py
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ import pandas as pd
 import statsmodels.tsa.arima.model as arima_model
 import statsmodels.api as sm
 from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.graphics.tsaplots import plot_pacf, pacf
 from statsmodels.stats.diagnostic import acorr_ljungbox, het_breuschpagan, het_white
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import adfuller
@@ -87,7 +88,7 @@ def random_color_text(text):
 # Function to display the title screen of the program
 def display_title_screen():
     title = ("SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA "
-             "and Trend Analysis Program v2.03")
+             "and Trend Analysis Program v2.04")
     author = "Author: C. van der Kaay (2024)"
     options = (
         "1. View full run-down",
@@ -109,7 +110,7 @@ def display_title_screen():
     print("- Detailed residual analysis including Ljung-Box, Shapiro-Wilk, and Kolmogorov-Smirnov tests")
     print("- Heteroscedasticity tests: Breusch-Pagan, White, and Spearman's rank correlation")
     print("- Descriptive statistics computation: mean, median, mode, standard deviation, skewness, kurtosis, etc.")
-    print("- Data visualization: static and interactive plots, decomposition plots, residual plots, and ACF plots")
+    print("- Data visualization: static and interactive plots, decomposition plots, residual plots, and ACF/PACF plots")
     print("- Lag plot analysis to check for randomness")
     print("- Forecasting with prediction intervals and error statistics (MSE, MAE, RMSE, MAPE)")
     print("- Optimal parameter selection for each smoothing method")
@@ -199,6 +200,7 @@ def view_full_rundown():
     print("     * Fitted values and forecasts plot")
     print("     * Residual plot")
     print("     * Autocorrelation Function (ACF) plot")
+    print("     * Partial autocorrelation Function (PACF) plot")
     print("     * Seasonal decomposition plot")
     print("     * Lag plot")
     print("   - Interactive plot using Plotly (opens in web browser)")
@@ -265,6 +267,16 @@ def plot_residual_acf(residuals):
     plt.title('Residual Autocorrelation Function (ACF)', fontsize=14)
     plt.xlabel('Lags', fontsize=12)
     plt.ylabel('Autocorrelation', fontsize=12)
+    plt.grid(True)
+    plt.show()
+
+
+def plot_residual_pacf(residuals):
+    max_lags = len(residuals) // 2  # Set the maximum number of lags to 50% of the sample size
+    plot_pacf(np.array(residuals), lags=max_lags)
+    plt.title('Residual Partial Autocorrelation Function (PACF)', fontsize=14)
+    plt.xlabel('Lags', fontsize=12)
+    plt.ylabel('Partial Autocorrelation', fontsize=12)
     plt.grid(True)
     plt.show()
 
@@ -556,6 +568,8 @@ class HoltWintersExponentialSmoothing:
     def plot_residual_acf(self):
         plot_residual_acf(self.residuals)
 
+    def plot_residual_pacf(self):
+        plot_residual_pacf(self.residuals)
 
 # Class for Holt Exponential Smoothing
 
@@ -697,6 +711,9 @@ class HoltExponentialSmoothing:
     def plot_residual_acf(self):
         plot_residual_acf(self.residuals)
 
+    def plot_residual_pacf(self):
+        plot_residual_pacf(self.residuals)
+
 
 # Class for Simple Exponential Smoothing
 class SimpleExponentialSmoothing:
@@ -813,6 +830,10 @@ class SimpleExponentialSmoothing:
     # Plot Autocorrelation Function (ACF) of residuals
     def plot_residual_acf(self):
         plot_residual_acf(self.residuals)
+
+    # Plot Partial Autocorrelation Function (PACF) of residuals
+    def plot_residual_pacf(self):
+        plot_residual_pacf(self.residuals)
 
 
 class CustomARIMA:
@@ -938,6 +959,9 @@ class CustomARIMA:
 
     def plot_residual_acf(self):
         plot_residual_acf(self.residuals)
+
+    def plot_residual_pacf(self):
+        plot_residual_pacf(self.residuals)
 
 
 # Plot the actual data, fitted values, forecasts, and prediction intervals
@@ -1365,8 +1389,9 @@ def perform_full_analysis(data, debug=False):
         model.check_heteroscedasticity()
         model.plot_residuals()
 
-        print_section_header("Plotting Residual ACF")
+        print_section_header("Plotting Residual ACF and PACF")
         model.plot_residual_acf()
+        model.plot_residual_pacf()
 
         print("\nSummary of Key Findings from the ACF Plot:")
         acf_values = sm.tsa.acf(model.residuals, fft=False)
@@ -1376,6 +1401,15 @@ def perform_full_analysis(data, debug=False):
         else:
             print(WARNING_FG + f"Significant autocorrelations detected at lags: {significant_lags} based on the "
                                f"ACF plot.")
+
+        print("\nSummary of Key Findings from the PACF Plot:")
+        pacf_values = pacf(model.residuals, nlags=len(model.residuals) // 2)
+        significant_pacf_lags = np.where(np.abs(pacf_values[1:]) > 1.96 / np.sqrt(len(model.residuals)))[0] + 1
+        if len(significant_pacf_lags) == 0:
+            print("No significant partial autocorrelations detected at any lags based on the PACF plot.")
+        else:
+            print(WARNING_FG + f"Significant partial autocorrelations detected at lags: {significant_pacf_lags} based "
+                               f"on the PACF plot.")
 
         # Perform Ljung-Box test
         lb_result = sm.stats.acorr_ljungbox(model.residuals, lags=[min(10, len(model.residuals) // 2)], return_df=True)
@@ -1499,8 +1533,6 @@ def main():
                     print("="*60 + Style.RESET_ALL)
                     time.sleep(10)  # Pause for 5 seconds before exiting
                     return
-
-
 
             if rerun_choice == 's':
                 break
