@@ -1,4 +1,4 @@
-t# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.04
+# SmoothTrend: Holt-Winters, Holt, Simple Exponential Smoothing, ARIMA/SARIMA and Trend Analysis Program v2.04
 
 ![Version](https://img.shields.io/badge/version-2.04-blue.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
